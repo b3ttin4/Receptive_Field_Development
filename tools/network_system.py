@@ -2,6 +2,7 @@ import numpy as np
 from scipy import linalg
 from copy import copy
 
+
 def distance(delta,N):
 	''' assume periodic boundary conditions'''
 	signs = np.sign(delta)
