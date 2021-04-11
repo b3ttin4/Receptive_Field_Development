@@ -4,15 +4,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 if __name__=="__main__":
-	from bettina.modeling.miller94.update_clean.tools import parse_args,tools
-	from bettina.modeling.miller94.update_clean.plotting import plotting
-	from bettina.modeling.miller94.update_clean import network_system,params,\
-	interaction_params,LGN_corr_params,rhs,three_step_method,write_to_hdf5,get_version_id,N,DA
+	from tools import parse_args,tools,plotting,network_system,params,three_step_method,\
+	N,DA,interaction_params,LGN_corr_params,rhs
 
 	mode_norm = "x"
 	c_orth,s_orth  = None,None
 
-	version = 28#get_version_id()
+	version = 28#tools.get_version_id()
 	print("version",version)
 	rA = params["rA"]
 	rI = parse_args.args.intracortical_scale * rA
@@ -136,6 +134,6 @@ if __name__=="__main__":
 	# plotting.plot_figures(st,N=N,version=version,DA=params["DA"]+2,arbor=arbor_sgl)
 
 	results_dict = {"rC" : rC, "rI" :  rI, "s" : s1, "rA" : rA, "N" : N}
-	write_to_hdf5(results_dict,version)
+	# tools.write_to_hdf5(results_dict,version)
 
 	print("done")
