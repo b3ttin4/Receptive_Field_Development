@@ -1,9 +1,9 @@
 import numpy as np
 import re
 import os
+import h5py
 
-from bettina.modeling.miller94.update_clean import network_system,load_hdf5,data_dir
-
+from tools import data_dir,network_system
 
 def gen_ecp(x, y, conn_params):
 	if "kc" in conn_params.keys():
@@ -111,6 +111,36 @@ def get_response(sd,DA):
 	opm = opm/rms
 	return opm,Rn
 
+def get_RF(s,DA):
+	N = s.shape[0]
+	RF = np.zeros((3,DA*N,DA*N))
+	PF = np.zeros((3,DA*N,DA*N))
+	for i in range(N):
+		for j in range(N):
+			son_ij = np.roll(np.roll(s[:,:,j,i,0],shift=N//2-j,axis=0),shift=N//2-i,axis=1)
+			sof_ij = np.roll(np.roll(s[:,:,j,i,1],shift=N//2-j,axis=0),shift=N//2-i,axis=1)
+			# print(i,j,son_ij.shape,sof_ij.shape,N//2-DA//2,N//2+DA//2+DA%2)
+			RF[0,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 son_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2] -\
+			 sof_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+			RF[1,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 son_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+			RF[2,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 sof_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+			
+	for i in range(N):
+		for j in range(N):
+			son_ij = np.roll(np.roll(s[j,i,:,:,0],shift=N//2-j,axis=0),shift=N//2-i,axis=1)
+			sof_ij = np.roll(np.roll(s[j,i,:,:,1],shift=N//2-j,axis=0),shift=N//2-i,axis=1)
+			PF[0,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 son_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2] -\
+			 sof_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+			PF[1,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 son_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+			PF[2,j*DA:(j+1)*DA,i*DA:(i+1)*DA] = \
+			 sof_ij[N//2-DA//2:N//2+DA//2+DA%2, N//2-DA//2:N//2+DA//2+DA%2]
+	return RF,PF
+
 
 def print_used_simulation_params():
 	file_list = os.listdir(data_dir)
@@ -130,29 +160,51 @@ def print_used_simulation_params():
 	return params
 
 
+def write_to_hdf5(results_dict,version):
+	filename = data_dir + "versions_v{}.hdf5".format(version)
+	f = h5py.File(filename,'a')
+	var_key_string = "{v}/".format(v=version)
+	for key,value in results_dict.items():
+		if (var_key_string in f.keys() and key in f[var_key_string].keys()):
+			del f[var_key_string][key]
+			f[var_key_string][key] = value
+		else:
+			f.create_dataset(var_key_string + "/" + key, data=value)
+	f.close()
+	print("Data written to versions_v{}.hdf5".format(version))
 
-if __name__=="__main__":
-	import matplotlib.pyplot as plt
-	from bettina.modeling.miller94.update_clean.plotting import plotting
-	from bettina.modeling.miller94.update_clean import N,DA,params,rhs
 
-	system = network_system.Network((N,N),(N,N),1)
+def get_version_id():
+	file_list = os.listdir(data_dir)
+	list_versions = [-1]
+	for item in file_list:
+		match = re.match("versions_v"+r'(\d+)', item)
+		if match:
+			list_versions.append(int(match.group(1)))
+	max_present_version = max(list_versions)
+	new_version = max_present_version + 1
+	return new_version
+	# filename = data_dir + "versions.hdf5"
+	# if os.path.isfile(filename):
+	# 	f = h5py.File(filename,'r')
+	# 	previous_version_ids = list(f["version"].keys())
+	# 	previous_version_ids = [int(item) for item in previous_version_ids]
+	# 	new_id = max(previous_version_ids) + 1
+	# 	f.close()
+	# else:
+	# 	new_id = 0
+	return new_id
 
-	arbor_sgl = system.create_arbor(radius=params["rA"],profile="gaussian")
-	arbor = np.dstack([arbor_sgl,arbor_sgl])
+def load_hdf5(version):
+	filename = data_dir + "versions_v{}.hdf5".format(version)
+	if os.path.isfile(filename):
+		f = h5py.File(filename,'r')
+		data = {}
+		for key in list(f[version].keys()):
+			data[key] = f[version][key][()]
+		f.close()
+		return data
+	else:
+		print("File not found.")
+		return None
 
-	# s_full = create_RFs("initialize",s_noise=params["s_noise"],arbor=arbor,N=N)
-	s_full = create_RFs("gabor",N=N,DA=DA)
-	s_full *= rhs.synaptic_normalization_factor_init(s_full,arbor)
-	print("s_full",s_full.shape)
-	s_full = s_full.reshape(N,N,N,N,2)
-	# s_full[s_full>0] = 1
-	print("s_full",s_full.shape,N,DA)
-	RF,_ = plotting.get_RF(s_full,DA)
-
-	fig = plt.figure()
-	ax = fig.add_subplot(111)
-	ax.set_title("S_D")
-	im = ax.imshow(RF[1,:,:],interpolation='nearest',cmap='RdBu_r')
-	plt.colorbar(im,ax=ax)
-	plt.show()
