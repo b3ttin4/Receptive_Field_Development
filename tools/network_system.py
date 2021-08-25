@@ -32,7 +32,7 @@ class Network:
 			sigma = conn_params["sigma"]
 			ampl = conn_params["ampl"]
 			disc_gaussian = gaussian(xdelta,ydelta,sigma) #/ np.prod(self.from_size)
-			norm_factor = np.sum(disc_gaussian,axis=(2,3))[:,:,None,None]
+			# norm_factor = np.sum(disc_gaussian,axis=(2,3))[:,:,None,None]
 			conn_matrix = ampl * disc_gaussian #/ norm_factor
 		elif profile=="Gabor":
 			sigma = conn_params["sigma"] * np.nanmax(xdelta)
@@ -67,6 +67,17 @@ class Network:
 				conn_matrix =\
 					 np.exp(-.5 * (x_theta ** 2 / sigma_x ** 2 + y_theta ** 2 / sigma_y ** 2)) *\
 				 	 np.cos(2 * np.pi / Lambda * x_theta + psi)
+		elif profile=="Mexican-hat":
+			sigma1 = conn_params["sigma1"]
+			sigma2 = conn_params["sigma2"]
+			ampl1 = 1./2/np.pi/sigma1**2
+			ampl2 = 1./2/np.pi/sigma2**2
+			disc_gaussian1 = gaussian(xdelta,ydelta,sigma1) #/ np.prod(self.from_size) / self.Nvert[0]
+			# disc_gaussian1 /= np.sum(disc_gaussian1,axis=(0,1))[None,None,:,:]
+			disc_gaussian2 = gaussian(xdelta,ydelta,sigma2) #/ np.prod(self.from_size) / self.Nvert[0]
+			# disc_gaussian2 /= np.sum(disc_gaussian2,axis=(0,1))[None,None,:,:]
+			conn_matrix = ampl1 * disc_gaussian1 - ampl2 * disc_gaussian2
+			conn_matrix /= np.nanmax(conn_matrix)
 		else:
 			print("Specified connectivity profile ({}) not found.".format(profile))
 

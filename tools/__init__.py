@@ -6,11 +6,11 @@ home_dir = os.environ["HOME"]
 current_user = os.environ["USER"]
 
 
-DA = 10 						#arbor diameter (default: 19 pixel)
-N = 16
+DA = 12 						#arbor diameter (default: 19 pixel)
+N = 32
 
 if current_user=="bh2757":
-	DA = 19
+	DA = 25
 	N = 64
 x_LGN,y_LGN = N,N
 x_cortex,y_cortex = N,N
@@ -29,7 +29,7 @@ params = dict(
 		s_max = 12,					#maximum strength of synapse
 		s_noise = 0.2,				#for initializing ff weights S
 		lambda_init = 0.01,			#initial growth factor
-		N = x_cortex				# system size
+		N = x_cortex				#system size
 )
 
 LGN_corr_params = {

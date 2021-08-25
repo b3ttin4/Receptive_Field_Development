@@ -37,7 +37,7 @@ def create_RFs(mode,**kwargs):
 			rng = kwargs["rng"]
 		else:
 			rng = np.random.RandomState(20210311)
-		s_full = arbor*(1 + s_noise*np.random.choice([-1,1],(N*N,N*N,2)))
+		s_full = arbor*(1 + s_noise*rng.choice([-1,1],(N*N,N*N,2)))
 
 	elif mode=="gabor":
 		N = kwargs["N"]

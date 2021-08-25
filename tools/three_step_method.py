@@ -27,7 +27,7 @@ def three_step_method(y,t0,l,f,frozen,I,arbor,C_onon,C_onoff,C_offoff,\
 	y_1 = y_0 + l*f_0
 	y_1,frozen = rhs.clip_synapse(y_1,s_max,arbor,frozen)
 	if np.sum(frozen)>Nfrozens:
-		y_1 *= rhs.synaptic_normalization_factor(y_1,frozen,arbor)
+		y_1 *= rhs.synaptic_normalization_factor(y_1,frozen,arbor,mode)
 		Nfrozens = np.sum(frozen[arbor>0])
 	st.append(y_1)
 	frozen_ratio[1] = Nfrozens
@@ -40,7 +40,7 @@ def three_step_method(y,t0,l,f,frozen,I,arbor,C_onon,C_onoff,C_offoff,\
 	y_2 = y_1 + update_step
 	y_2,frozen = rhs.clip_synapse(y_2,s_max,arbor,frozen)
 	if np.sum(frozen)>Nfrozens:
-		y_2 *= rhs.synaptic_normalization_factor(y_2,frozen,arbor)
+		y_2 *= rhs.synaptic_normalization_factor(y_2,frozen,arbor,mode)
 		Nfrozens = np.sum(frozen[arbor>0])
 	st.append(y_2)
 	frozen_ratio[2] = Nfrozens
@@ -53,7 +53,7 @@ def three_step_method(y,t0,l,f,frozen,I,arbor,C_onon,C_onoff,C_offoff,\
 	y_3 = y_2 + update_step
 	y_3,frozen = rhs.clip_synapse(y_3,s_max,arbor,frozen)
 	if np.sum(frozen)>Nfrozens:
-		y_3 *= rhs.synaptic_normalization_factor(y_3,frozen,arbor)
+		y_3 *= rhs.synaptic_normalization_factor(y_3,frozen,arbor,mode)
 		Nfrozens = np.sum(frozen[arbor>0])
 	st.append(y_3)
 	frozen_ratio[3] = Nfrozens
@@ -65,7 +65,7 @@ def three_step_method(y,t0,l,f,frozen,I,arbor,C_onon,C_onoff,C_offoff,\
 	y_4 = y_3 + update_step
 	y_4,frozen = rhs.clip_synapse(y_4,s_max,arbor,frozen)
 	if np.sum(frozen)>Nfrozens:
-		y_4 *= rhs.synaptic_normalization_factor(y_4,frozen,arbor)
+		y_4 *= rhs.synaptic_normalization_factor(y_4,frozen,arbor,mode)
 		Nfrozens = np.sum(frozen[arbor>0])
 	st.append(y_4)
 	frozen_ratio[4] = Nfrozens
@@ -84,7 +84,7 @@ def three_step_method(y,t0,l,f,frozen,I,arbor,C_onon,C_onoff,C_offoff,\
 		y_new = y_4 + update_step
 		y_new,frozen = rhs.clip_synapse(y_new,s_max,arbor,frozen)
 		if np.sum(frozen)>Nfrozens:
-			y_new *= rhs.synaptic_normalization_factor(y_new,frozen,arbor)
+			y_new *= rhs.synaptic_normalization_factor(y_new,frozen,arbor,mode)
 			Nfrozens = np.sum(frozen[arbor>0])
 		# st.append(y_new)
 		frozen_ratio[i+1] = 1.*Nfrozens

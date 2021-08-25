@@ -25,11 +25,21 @@ def plot_RF(s,**kwargs):
 	DA = kwargs["DA"]
 	RF,PF = tools.get_RF(s,DA)
 
+	if "plot_size" in kwargs:
+		plot_size = kwargs["plot_size"] * DA
+		RF = RF[:,:plot_size,:plot_size]
+		PF = PF[:,:plot_size,:plot_size]
+
+
+	cmap_div = "RdBu_r"
+	if "cmap_div" in kwargs:
+		cmap_div = kwargs["cmap_div"]
+
 	fig = plt.figure(figsize=(18,9))
 	## receptive field
 	ax = fig.add_subplot(231)
 	ax.set_title("S_D")
-	im = ax.imshow(RF[0,:,:],interpolation='nearest',cmap='RdBu_r')
+	im = ax.imshow(RF[0,:,:],interpolation='nearest',cmap=cmap_div)
 	plt.colorbar(im,ax=ax)
 
 	ax = fig.add_subplot(232)
@@ -45,7 +55,7 @@ def plot_RF(s,**kwargs):
 	## projective field
 	ax = fig.add_subplot(234)
 	ax.set_title("S_D (PF)")
-	im = ax.imshow(PF[0,:,:],interpolation='nearest',cmap='RdBu_r')
+	im = ax.imshow(PF[0,:,:],interpolation='nearest',cmap=cmap_div)
 	plt.colorbar(im,ax=ax)
 
 	ax = fig.add_subplot(235)
@@ -57,8 +67,28 @@ def plot_RF(s,**kwargs):
 	ax.set_title("S_of (PF)")
 	im = ax.imshow(PF[2,:,:],interpolation='nearest',cmap='binary')
 	plt.colorbar(im,ax=ax)
-
 	return fig
+
+def plot_RF_grid(RF_list,**kwargs):
+	num_panels = len(RF_list)
+	ncol = int(np.ceil(np.sqrt(num_panels)))
+	nrow = int(np.ceil(1.*num_panels/ncol))
+
+	if "params_list" in kwargs.keys():
+		params_list = kwargs["params_list"]
+	else:
+		params_list = None
+
+
+	fig = plt.figure(figsize=(ncol*6,nrow*5))
+	for i in range(num_panels):
+		ax = fig.add_subplot(nrow,ncol,1+i)
+		if params_list is not None:
+			ax.set_title("rA={:.0f},rI={:.1f},rC={:.1f}".format(*params_list[i]))
+		im=ax.imshow(RF_list[i],interpolation='nearest',cmap='RdBu_r')
+		plt.colorbar(im,ax=ax)
+	return fig
+
 
 
 def plot_temporal_behaviour(st,**kwargs):

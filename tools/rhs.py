@@ -3,12 +3,15 @@ import warnings
 
 #warnings.filterwarnings('error')
 
-def synaptic_normalization_factor_init(s,arbor):
+def synaptic_normalization_factor_init(s,arbor,mode):
 	'''multiplicative normalization of initial S weights over each
 	cortical cell (step 5)'''
-	factor_on = np.sum(arbor[:,:,0],axis=1)/np.sum(s[:,:,0],axis=1)
-	factor_of = np.sum(arbor[:,:,1],axis=1)/np.sum(s[:,:,1],axis=1)
-	f = np.dstack([ factor_on[:,None],factor_of[:,None] ])
+	if mode=="x":
+		factor_on = np.sum(arbor[:,:,0],axis=1)/np.sum(s[:,:,0],axis=1)
+		factor_of = np.sum(arbor[:,:,1],axis=1)/np.sum(s[:,:,1],axis=1)
+		f = np.dstack([ factor_on[:,None],factor_of[:,None] ])
+	elif mode=="alpha":
+		f = (np.sum(arbor[:,:,0],axis=0)*2./np.sum(s[:,:,0]+s[:,:,1], axis=0))[None,:,None]
 	return f
 
 def unconstrained(y,t,frozen,I,arbor,C_onon,C_onoff,C_offoff):
@@ -28,7 +31,7 @@ def unconstrained(y,t,frozen,I,arbor,C_onon,C_onoff,C_offoff):
 	delta_off = np.dot(np.dot(C_offoff,s_off) + np.dot(C_onoff,s_on),I) * arbor_frzn[:,:,1]
 	return np.dstack([delta_on,delta_off])
 
-def unconstrained_init(y,t,linit,I,arbor,C_onon,C_onoff,C_offoff,target_sigma):
+def unconstrained_init(y,t,linit,I,arbor,C_onon,C_onoff,C_offoff,target_sigma,mode):
 	"""
 	input: y, time t, params
 		y = [S_on,S_off]
@@ -39,7 +42,6 @@ def unconstrained_init(y,t,linit,I,arbor,C_onon,C_onoff,C_offoff,target_sigma):
 		target_sigma : target value for std of change in s weight
 	output: y'
 	"""
-	
 	frozen = np.zeros_like(arbor,dtype=bool)
 	deltaS_unconstrained = unconstrained(y,t,frozen,I,arbor,C_onon,C_onoff,C_offoff)
 	
@@ -82,7 +84,7 @@ def constrained(y,t,frozen,I,arbor,C_onon,C_onoff,C_offoff,c_orth=None,s_orth=No
 		norm[norm==0] = 1
 		eps = (1.*np.sum(delta[:,:,0] + delta[:,:,1],axis=0)) / norm		
 		delta2 = np.dstack([delta[:,:,0] - eps[None,:]*arbor_act[:,:,0],\
-		 delta[:,:,1] - eps[None,:]*arbor_act[:,:,1]])
+						    delta[:,:,1] - eps[None,:]*arbor_act[:,:,1]])
 	
 	elif mode=="xalpha":
 		if True:
@@ -130,19 +132,33 @@ def constrained(y,t,frozen,I,arbor,C_onon,C_onoff,C_offoff,c_orth=None,s_orth=No
 	return delta2
 	
 
-def synaptic_normalization_factor(s,frozen,arbor):
-	s_frzn = np.copy(s)
-	s_actv = np.copy(s)
-	s_frzn[np.logical_not(frozen)] = 0.0
-	s_actv[frozen] = 0.0
+def synaptic_normalization_factor(s,frozen,arbor,mode):
+	if mode=="x":
+		s_frzn = np.copy(s)
+		s_actv = np.copy(s)
+		s_frzn[np.logical_not(frozen)] = 0.0
+		s_actv[frozen] = 0.0
 
-	gamma = np.ones_like(arbor,dtype=float)
-	factor_on = np.sum(-s_frzn[:,:,0] + arbor[:,:,0],axis=1)/np.sum(s_actv[:,:,0],axis=1)
-	factor_of = np.sum(-s_frzn[:,:,1] + arbor[:,:,1],axis=1)/np.sum(s_actv[:,:,1],axis=1)
-	gamma[...] = np.dstack([ factor_on[:,None],factor_of[:,None] ])
-	gamma[frozen] = 1.
-	gamma[np.logical_not(arbor)] = 1.
-	gamma = np.clip(gamma,0.8,1.2)
+		gamma = np.ones_like(arbor,dtype=float)
+		factor_on = np.sum(-s_frzn[:,:,0] + arbor[:,:,0],axis=1)/np.sum(s_actv[:,:,0],axis=1)
+		factor_of = np.sum(-s_frzn[:,:,1] + arbor[:,:,1],axis=1)/np.sum(s_actv[:,:,1],axis=1)
+		gamma[...] = np.dstack([ factor_on[:,None],factor_of[:,None] ])
+		gamma[frozen] = 1.
+		gamma[np.logical_not(arbor)] = 1.
+		gamma = np.clip(gamma,0.8,1.2)
+	elif mode=="alpha":
+		s_frzn = np.copy(s)
+		s_actv = np.copy(s)
+		s_frzn[np.logical_not(frozen)] = 0.0
+		s_actv[frozen] = 0.0
+
+		gamma = np.ones_like(arbor,dtype=float)
+		gamma[...] =\
+		  ((-s_frzn.sum(axis=0).sum(axis=1) + np.sum(arbor[:,:,0],axis=0)*2.)/\
+		  	(s_actv.sum(axis=0).sum(axis=1)))[None,:,None]
+		gamma = np.clip(gamma,0.8,1.2)
+		gamma[frozen] = 1.
+		gamma[np.logical_not(arbor)] = 1.
 	return gamma
 
 
