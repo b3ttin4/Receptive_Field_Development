@@ -26,7 +26,11 @@ Licensed under MIT license.
 
 ### Getting cited
 
-Code can be cited as
+Code can be cited as 
+
+[![DOI](https://zenodo.org/badge/399892661.svg)](https://zenodo.org/badge/latestdoi/399892661)
+
+
 
 ### Scripts
 This repository contains a [Python Script](https://github.com/b3ttin4/Receptive_Field_Development/blob/main/main.py) that runs a simulation of a two-layer feedforward neural network. Run as
