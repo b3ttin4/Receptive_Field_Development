@@ -37,4 +37,4 @@ This repository contains a [Python Script](https://github.com/b3ttin4/Receptive_
 
 <code>python main.py --rI rI --rC rC</code>
 
-where _rI_ gives intracortical interaction range and _rC_ gives spatial range of input correlations (called eta and zeta, respectively in [Fumarola 2021](https://arxiv.org/abs/2109.02048)).
+where _rI_ gives intracortical interaction range and _rC_ gives spatial range of input correlations (called &eta; and &zeta;, respectively, in [Fumarola 2021](https://arxiv.org/abs/2109.02048)).
